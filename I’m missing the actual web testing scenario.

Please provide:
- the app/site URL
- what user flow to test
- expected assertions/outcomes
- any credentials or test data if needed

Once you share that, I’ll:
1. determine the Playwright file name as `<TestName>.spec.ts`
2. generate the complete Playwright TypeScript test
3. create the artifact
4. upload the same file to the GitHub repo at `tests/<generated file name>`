@@ -1,0 +1,13 @@
+I’m missing the actual web testing scenario.
+
+Please provide:
+- the app/site URL
+- what user flow to test
+- expected assertions/outcomes
+- any credentials or test data if needed
+
+Once you share that, I’ll:
+1. determine the Playwright file name as `<TestName>.spec.ts`
+2. generate the complete Playwright TypeScript test
+3. create the artifact
+4. upload the same file to the GitHub repo at `tests/<generated file name>`
