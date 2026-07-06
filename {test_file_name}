@@ -1,0 +1,124 @@
+File Name:
+AbilityScoresRecalculateApiTest.java
+
+File Content:
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.path.json.JsonPath;
+import io.restassured.response.Response;
+import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static io.restassured.RestAssured.given;
+
+public class AbilityScoresRecalculateApiTest {
+
+    private static final String ENDPOINT = "/ability-scores/recalculate";
+
+    private String baseUrl;
+    private String authToken;
+
+    @BeforeClass
+    public void setUp() {
+        baseUrl = System.getProperty("BASE_URL", System.getenv("BASE_URL"));
+        if (baseUrl == null || baseUrl.trim().isEmpty()) {
+            baseUrl = "http://localhost:8080";
+        }
+
+        authToken = System.getProperty("AUTH_TOKEN", System.getenv("AUTH_TOKEN"));
+
+        RestAssured.baseURI = baseUrl;
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void tearDown() {
+        RestAssured.reset();
+    }
+
+    private Response postRecalculate(Map<String, Object> requestBody) {
+        io.restassured.specification.RequestSpecification spec = given()
+                .contentType(ContentType.JSON)
+                .accept(ContentType.JSON);
+
+        if (authToken != null && !authToken.trim().isEmpty()) {
+            spec.header("Authorization", "Bearer " + authToken.trim());
+        }
+
+        return spec
+                .body(requestBody)
+                .when()
+                .post(ENDPOINT)
+                .andReturn();
+    }
+
+    private void assertAccepted(Response response, String expectedPeriod) {
+        Assert.assertEquals(response.statusCode(), 202, "Expected HTTP 202 Accepted.");
+
+        JsonPath json = response.jsonPath();
+        Assert.assertEquals(json.getString("status"), "ACCEPTED", "Expected response.status to be ACCEPTED.");
+        Assert.assertEquals(json.getString("message"), "Recalculation started", "Expected response.message to be 'Recalculation started'.");
+        Assert.assertEquals(json.getString("period"), expectedPeriod, "Expected response.period to match request.");
+    }
+
+    private void assertHasReadableBody(Response response) {
+        Assert.assertNotNull(response, "Response should not be null.");
+        String body = response.getBody() == null ? null : response.getBody().asString();
+        Assert.assertNotNull(body, "Response body should be readable.");
+        Assert.assertFalse(body.trim().isEmpty(), "Response body should not be empty.");
+    }
+
+    @Test(description = "TC-001 - Verify recalculation request is accepted for a valid PRACTICE scope")
+    public void tc001_verifyRecalculationRequestIsAcceptedForValidPracticeScope() {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("role", "P");
+        requestBody.put("practicename", "java");
+        requestBody.put("period", "2026-03");
+
+        Response response = postRecalculate(requestBody);
+
+        assertHasReadableBody(response);
+        assertAccepted(response, "2026-03");
+
+        // Verification of recalculation record creation requires either:
+        // 1) an API to fetch recalculation records, or
+        // 2) database access.
+        // Neither is defined in the provided manual test case, so it is not asserted here.
+    }
+
+    @Test(description = "TC-002 - Verify recalculation request is accepted for a valid USER scope")
+    public void tc002_verifyRecalculationRequestIsAcceptedForValidUserScope() {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("role", "U");
+        requestBody.put("employeeUid", 456789);
+        requestBody.put("practicename", "java");
+        requestBody.put("period", "2026-03");
+
+        Response response = postRecalculate(requestBody);
+
+        assertHasReadableBody(response);
+        assertAccepted(response, "2026-03");
+
+        // Verification of recalculation record creation requires an API to read records or DB access.
+    }
+
+    @Test(description = "TC-003 - Verify API returns 400 Bad Request when role is missing")
+    public void tc003_verifyApiReturns400BadRequestWhenRoleIsMissing() {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("practicename", "java");
+        requestBody.put("employeeUid", 456789);
+        requestBody.put("period", "2026-03");
+
+        Response response = postRecalculate(requestBody);
+
+        Assert.assertEquals(response.statusCode(), 400, "Expected HTTP 400 Bad Request when role is missing.");
+        assertHasReadableBody(response);
+
+        // The manual test case's Expected Result section is truncated, so we only assert HTTP 400.
+    }
+}
