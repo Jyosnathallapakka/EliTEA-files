@@ -1,0 +1,17 @@
+Cannot generate the Playwright spec because no approved manual test cases (IDs, titles, steps, expected results) were provided or found in the indexed attachments (search returned no results).
+
+Also, I don’t have a GitHub upload tool/configuration available in this session, so I can’t perform the “upload to configured GitHub repository” step yet.
+
+Provide one of the following, and I will generate a single `<TestName>.spec.ts` file, create the artifact with that exact filename/content, and (if you provide an upload mechanism/token or tool) upload it to `tests/<generated file name>`:
+
+1) Paste the approved manual test cases in this structure (repeat per test):
+- Test Case ID:
+- Test Case Title:
+- Preconditions:
+- Steps:
+- Test Data (if any):
+- Expected Result:
+
+OR
+
+2) Upload/attach the document (CSV/Excel/PDF/Doc) containing the approved manual test cases so I can read them.
